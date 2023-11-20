@@ -1,0 +1,30 @@
+{
+    "films": [
+        {
+          "id": 1,
+          "title": "Inception",
+          "releaseDate": "2010-07-16",
+          "rating": 8.8
+        },
+        {
+          "id": 2,
+          "title": "Interstellar",
+          "releaseDate": "2014-11-07",
+          "rating": 8.6
+        }
+      ],
+    "users": [
+        {
+          "id": 1,
+          "username": "Kriss",
+          "favorites": [1, 2], 
+          "watched": [2]
+        },
+        {
+          "id": 2,
+          "username": "Sara",
+          "favorites": [2], 
+          "watched": [1]
+        }
+      ]
+  }
