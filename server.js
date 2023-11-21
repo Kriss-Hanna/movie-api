@@ -1,75 +1,143 @@
-const express = require('express');
+const express = require("express");
+const fs = require("fs");
 const app = express();
 
-const PORT = 5000
+const PORT = 5000;
+const dbMovies = "./db.json";
 
-app.use(express.json())
+app.use(express.json());
 
-app.get('/user/:userId/favorites', async (req, res) => {
-  try {
-    // Récupérer les données de l'utilisateur et des films
-    const userResponse = await fetch(`http://localhost:5000/users/${req.params.userId}`);
-    const filmsResponse = await fetch('http://localhost:5000/films');
-    
-    if (!userResponse.ok || !filmsResponse.ok) {
-      throw new Error('Erreur lors de la récupération des données');
-    }
+// Récuperer la data
+function getDatabase() {
+  const data = fs.readFileSync(dbMovies);
+  return JSON.parse(data);
+}
 
-    const user = await userResponse.json();
-    const films = await filmsResponse.json();
+// Sauvegarder la data
+function saveDatabase(data) {
+  fs.writeFileSync(dbMovies, JSON.stringify(data));
+}
 
-    // Filtrer les films favoris de l'utilisateur
-    const favorites = films.filter(film => user.favorites.includes(film.id));
+// En tant qu’utilisateur, je souhaite ajouter ...
+app.post("/favorites/:userId/:movieId", (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const movieId = parseInt(req.params.movieId);
+  const db = getDatabase();
 
-    // Trier les films favoris
-    const sortedFavorites = favorites.sort((a, b) => {
-      if (req.query.sortBy === 'date') {
-        return new Date(b.releaseDate) - new Date(a.releaseDate);
-      } else if (req.query.sortBy === 'rating') {
-        return b.rating - a.rating;
-      }
-    });
-
-    res.status(200).json(sortedFavorites);
-  } catch (error) {
-    res.status(500).send("Erreur lors de la récupération des films favoris");
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
   }
+
+  if (!user.favorites.includes(movieId)) {
+    user.favorites.push(movieId);
+    saveDatabase(db);
+  }
+
+  res.status(200).send("Film ajouté aux favoris");
 });
 
-app.post('/user/:userId/favorites', async (req, res) => {
-  try {
-    // Récupérer les données de l'utilisateur
-    const userResponse = await fetch(`http://localhost:3000/users/${req.params.userId}`);
-    if (!userResponse.ok) {
-      throw new Error('Utilisateur non trouvé');
-    }
-    const user = await userResponse.json();
+// ... et retirer un film à/de mes favoris.
+app.delete("/favorites/:userId/:movieId", (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const movieId = parseInt(req.params.movieId);
+  const db = getDatabase();
 
-    // Vérifier si le film existe
-    const filmResponse = await fetch(`http://localhost:3000/films/${req.body.filmId}`);
-    if (!filmResponse.ok) {
-      throw new Error('Film non trouvé');
-    }
-
-    // Ajouter le film aux favoris de l'utilisateur
-    const updatedFavorites = [...user.favorites, req.body.filmId];
-    const updateUserResponse = await fetch(`http://localhost:3000/users/${req.params.userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorites: updatedFavorites })
-    });
-
-    if (!updateUserResponse.ok) {
-      throw new Error('Erreur lors de la mise à jour des favoris');
-    }
-
-    res.status(200).send('Film ajouté aux favoris');
-  } catch (error) {
-    res.status(500).send("Erreur lors de l'ajout du film aux favoris");
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
   }
+
+  user.favorites = user.favorites.filter((id) => id !== movieId);
+  saveDatabase(db);
+
+  res.status(200).send("Film retiré des favoris");
 });
 
-// Start the server
+// En tant qu’utilisateur, je souhaite pouvoir différencier les films que j’ai vu ...
+app.post("/watched/:userId/:movieId", (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const movieId = parseInt(req.params.movieId);
+  const db = getDatabase();
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
+  }
+
+  if (!user.watched.includes(movieId)) {
+    user.watched.push(movieId);
+    saveDatabase(db);
+  }
+
+  res.status(200).send("Film marqué comme vu");
+});
+
+// ... de ceux que je n’ai pas vu et notifier quand j’ai vu un film.
+app.delete("/watched/:userId/:movieId", (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const movieId = parseInt(req.params.movieId);
+  const db = getDatabase();
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
+  }
+
+  user.watched = user.watched.filter((id) => id !== movieId);
+  saveDatabase(db);
+
+  res.status(200).send("Film marqué comme non-vu");
+});
+
+// • En tant qu’utilisateur, je souhaite lister mes films favoris triés par date de sortie ou par note globale
+app.get("/favorites/:userId", (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  const sortBy = req.query.sortBy;
+
+  const db = getDatabase();
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
+  }
+
+  const favorites = user.favorites.map((favId) =>
+    db.films.find((film) => film.id === favId)
+  );
+
+  if (sortBy === "rating") {
+    favorites.sort((a, b) => b.rating - a.rating);
+  } else if (sortBy === "releaseDate") {
+    favorites.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
+  }
+
+  res.status(200).json(favorites);
+});
+
+// En tant qu’utilisateur, je souhaite lister les films que j’ai vu et ceux que je n’ai pas vu.
+app.get("/movies/:userId", (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  const db = getDatabase();
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).send("Utilisateur non trouvé");
+  }
+
+  const watchedMovies = user.watched.map((watchId) =>
+    db.films.find((film) => film.id === watchId)
+  );
+  const unwatchedMovies = db.films.filter(
+    (film) => !user.watched.includes(film.id)
+  );
+
+  res.status(200).json({ watched: watchedMovies, unwatched: unwatchedMovies });
+});
+
+// Lancer le serveur
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}. Click http://localhost:${PORT}.`);
+  console.log(
+    `Server is running on port ${PORT}. Click http://localhost:${PORT}.`
+  );
 });
