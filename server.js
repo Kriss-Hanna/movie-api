@@ -2,8 +2,8 @@ const express = require("express");
 const fs = require("fs");
 const app = express();
 
-const PORT = 5000;
-const dbMovies = "./db.json";
+const PORT = 3000;
+const dbMovies = "db/db.json";
 
 app.use(express.json());
 

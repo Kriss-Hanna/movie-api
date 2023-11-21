@@ -5,8 +5,10 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js",
-    "database": "json-server --watch db.json"
+    "database": "json-server --watch db.json",
+    "dev": "npm-run-all --parallel dev:*",
+    "dev:server": "nodemon index.js",
+    "dev:data": "json-server --watch db/db.json --port 3001"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,7 @@
     "express": "^4.18.2",
     "fs": "^0.0.1-security",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "npm-run-all": "^4.1.5"
   }
 }

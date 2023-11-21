@@ -1,0 +1,46 @@
+{
+  "films": [
+    {
+      "id": 1,
+      "title": "Inception",
+      "releaseDate": "2010-07-16",
+      "rating": 8.8
+    },
+    {
+      "id": 2,
+      "title": "Interstellar",
+      "releaseDate": "2014-11-07",
+      "rating": 8.6
+    },
+    {
+      "id": 3,
+      "title": "The Prestige",
+      "releaseDate": "2006-11-10",
+      "rating": 8.5
+    },
+    {
+      "id": 4,
+      "title": "The Wolf of Wall Street",
+      "releaseDate": "2013-12-25",
+      "rating": 8.2
+    },
+    {
+      "id": 5,
+      "title": "The Departed",
+      "releaseDate": "2006-10-06",
+      "rating": 8.5
+    },
+    {
+      "id": 6,
+      "title": "The Lord of the Rings: The Return of the King",
+      "releaseDate": "2003-12-17",
+      "rating": 8.9
+    }
+  ],
+  "users": [
+    { "id": 1, "username": "Kriss", "favorites": [1, 2], "watched": [2] },
+    { "id": 2, "username": "Sara", "favorites": [2], "watched": [1] },
+    { "id": 3, "username": "Helen", "favorites": [3, 4], "watched": [4] },
+    { "id": 4, "username": "Linda", "favorites": [4], "watched": [3] }
+  ]
+}
